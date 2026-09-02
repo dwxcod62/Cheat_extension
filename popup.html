@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>KudaVas</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+    
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    
+    body {
+      font-family: 'Inter', sans-serif;
+      background: #111;
+      color: #ccc;
+      width: 280px;
+      padding: 16px;
+      text-align: center;
+    }
+
+    #status-text {
+      font-size: 11px;
+      margin-bottom: 8px;
+      color: #888;
+      height: 14px;
+    }
+
+    #run-ai-btn {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #333;
+      border-radius: 6px;
+      background: #222;
+      color: #fff;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    #run-ai-btn:hover {
+      background: #2a2a2a;
+      border-color: #444;
+    }
+
+    #run-ai-btn:disabled {
+      opacity: 0.5;
+      cursor: wait;
+    }
+
+    .footer {
+      margin-top: 12px;
+      font-size: 10px;
+      color: #555;
+    }
+
+    /* Keep IDs and structure for popup.js */
+    #status-detail { font-size: 10px; color: #666; margin-bottom: 8px; min-height: 12px; }
+    .loading-spinner { display: none; }
+    .btn-icon { display: none; }
+
+    .key-row {
+      margin-bottom: 10px;
+    }
+    #openai-key {
+      width: 100%;
+      padding: 6px 8px;
+      border: 1px solid #333;
+      border-radius: 4px;
+      background: #0a0a0a;
+      color: #fff;
+      font-size: 11px;
+      font-family: 'Courier New', monospace;
+    }
+    #openai-key:focus {
+      outline: none;
+      border-color: #10b981;
+    }
+    .key-label {
+      font-size: 10px;
+      color: #666;
+      margin-bottom: 4px;
+      text-align: left;
+    }
+  </style>
+</head>
+<body id="app-body">
+  <div id="status-text">Ready</div>
+  <div id="status-detail"></div>
+
+  <div class="key-row">
+    <div class="key-label">OpenAI Key (sk-...)</div>
+    <input id="openai-key" type="password" placeholder="sk-..." autocomplete="off" />
+  </div>
+
+  <button id="run-ai-btn">
+    <span id="btn-text">Run</span>
+    <div class="loading-spinner"></div>
+  </button>
+
+  <div class="footer">@kudamii</div>
+
+  <script src="scripts/config.js"></script>
+  <script src="popup.js"></script>
+</body>
+</html>

@@ -1,0 +1,61 @@
+# Build output
+dist/
+dashboard/dist/
+
+# Dependencies
+dashboard/node_modules/
+node_modules/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+ENV/
+.eggs/
+*.egg-info/
+dist/
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Chrome / Extension dev
+*.crx
+*.xpi
+extensions/
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# FFmpeg binaries / compiled
+ffmpeg/
+ffprobe/
+ffmpeg.exe
+ffprobe.exe
+
+# ngrok tunnel state
+ngrok/
+
+# Whisper models cache (optional)
+whisper_models/
+
+# Cursor / IDE
+.cursorignore
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Whisper models cache (optional)
+whisper_models/

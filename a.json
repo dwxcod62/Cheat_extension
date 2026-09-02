@@ -1,0 +1,321 @@
+[
+  {
+    "question": "When you brainstorm, you _____",
+    "type": "multiple_choice",
+    "url": "",
+    "options": [
+      "think of three ideas.",
+      "think of as many ideas as possible.",
+      "try to think of the best idea."
+    ],
+    "is_passage": false
+  },
+  {
+    "question": "When you brainstorm, _____",
+    "type": "multiple_choice",
+    "url": "",
+    "options": [
+      "no ideas are good.",
+      "some ideas are good.",
+      "all ideas are good."
+    ],
+    "is_passage": false
+  },
+  {
+    "question": "Learning a new sport is fun.",
+    "type": "multiple_choice",
+    "url": "",
+    "options": [
+      "subject",
+      "object"
+    ],
+    "is_passage": false
+  },
+  {
+    "question": "Kate enjoys watching football.",
+    "type": "multiple_choice",
+    "url": "",
+    "options": [
+      "subject",
+      "object"
+    ],
+    "is_passage": false
+  },
+  {
+    "question": "Playing chess is my favorite activity.",
+    "type": "multiple_choice",
+    "url": "",
+    "options": [
+      "subject",
+      "object"
+    ],
+    "is_passage": false
+  },
+  {
+    "question": "I don't like losing chess games.",
+    "type": "multiple_choice",
+    "url": "",
+    "options": [
+      "subject",
+      "object"
+    ],
+    "is_passage": false
+  },
+  {
+    "question": "I like to play chess, _____ I don't like to compete.",
+    "type": "multiple_choice",
+    "url": "",
+    "options": [
+      "and",
+      "but"
+    ],
+    "is_passage": false
+  },
+  {
+    "question": "Scrabble is a fun game, _____ it helps you learn new words.",
+    "type": "multiple_choice",
+    "url": "",
+    "options": [
+      "and",
+      "but"
+    ],
+    "is_passage": false
+  },
+  {
+    "question": "In today's podcast, two people",
+    "type": "multiple_choice",
+    "url": "",
+    "options": [
+      "call in with questions.",
+      "tell personal stories.",
+      "debate a topic."
+    ],
+    "is_passage": false
+  },
+  {
+    "question": "Victor and Antonio talk about",
+    "type": "multiple_choice",
+    "url": "",
+    "options": [
+      "how to make money in professional sports",
+      "how professional sports players help people.",
+      "professional players and the money they make."
+    ],
+    "is_passage": false
+  },
+  {
+    "question": "Victor and Antonio _____ opinions about the topic.",
+    "type": "multiple_choice",
+    "url": "",
+    "options": [
+      "have the same",
+      "have different",
+      "don't have strong"
+    ],
+    "is_passage": false
+  },
+  {
+    "question": "The podcaster _____ about the topic.",
+    "type": "multiple_choice",
+    "url": "",
+    "options": [
+      "agrees with Victor's opinion",
+      "agrees with Antonio's opinion",
+      "doesn't give her opinion"
+    ],
+    "is_passage": false
+  },
+  {
+    "question": "Antonio is a",
+    "type": "multiple_choice",
+    "url": "",
+    "options": [
+      "teacher.",
+      "sports writer.",
+      "professional player."
+    ],
+    "is_passage": false
+  },
+  {
+    "question": "Victor is a",
+    "type": "multiple_choice",
+    "url": "",
+    "options": [
+      "podcaster.",
+      "teacher.",
+      "sports writer."
+    ],
+    "is_passage": false
+  },
+  {
+    "question": "Antonio thinks professional players",
+    "type": "multiple_choice",
+    "url": "",
+    "options": [
+      "don't help people.",
+      "don't have fun.",
+      "don't work hard."
+    ],
+    "is_passage": false
+  },
+  {
+    "question": "Victor thinks professional players",
+    "type": "multiple_choice",
+    "url": "",
+    "options": [
+      "make things to sell.",
+      "help people in many ways.",
+      "are also good coaches."
+    ],
+    "is_passage": false
+  },
+  {
+    "question": "What does Antonio NOT like about professional players?",
+    "type": "multiple_choice",
+    "url": "",
+    "options": [
+      "They have a lot of fun when they compete.",
+      "They don't practice a lot every day.",
+      "They get money for losing and winning."
+    ],
+    "is_passage": false
+  },
+  {
+    "question": "Victor and Antonio agree that professional players",
+    "type": "multiple_choice",
+    "url": "",
+    "options": [
+      "don't have a normal job.",
+      "don't work hard",
+      "don't have an important job."
+    ],
+    "is_passage": false
+  },
+  {
+    "question": "Victor and Antonio also agree that professional players",
+    "type": "multiple_choice",
+    "url": "",
+    "options": [
+      "have a hard job.",
+      "have a physical job.",
+      "make too much money."
+    ],
+    "is_passage": false
+  },
+  {
+    "question": "Professional players practice _____ hours a day.",
+    "type": "multiple_choice",
+    "url": "",
+    "options": [
+      "6",
+      "7",
+      "8"
+    ],
+    "is_passage": false
+  },
+  {
+    "question": "Listen to the sentence. Choose the listing word or phrase you hear.",
+    "type": "multiple_choice",
+    "url": "https://cdnapisec.kaltura.com/p/1540181/sp/154018100/embedIframeJs/uiconf_id/41533392/partner_id/1540181?iframeembed=true&playerId=kaltura_player&entry_id=1_iu3s8g9v&flashvars[streamerType]=auto&flashvars[localizationCode]=en&flashvars[sideBarContainer.plugin]=true&flashvars[sideBarContainer.position]=left&flashvars[sideBarContainer.clickToClose]=true&flashvars[chapters.plugin]=true&flashvars[chapters.layout]=vertical&flashvars[chapters.thumbnailRotator]=false&flashvars[streamSelector.plugin]=true&flashvars[EmbedPlayer.SpinnerTarget]=videoHolder&flashvars[dualScreen.plugin]=true&flashvars[hotspots.plugin]=1&flashvars[Kaltura.addCrossoriginToIframe]=true&&wid=1_16541smq",
+    "options": [
+      "one reason",
+      "first",
+      "another reason"
+    ],
+    "is_passage": true
+  },
+  {
+    "question": "Listen to the sentence. Choose the listing word or phrase you hear.",
+    "type": "multiple_choice",
+    "url": "https://cdnapisec.kaltura.com/p/1540181/sp/154018100/embedIframeJs/uiconf_id/41533392/partner_id/1540181?iframeembed=true&playerId=kaltura_player&entry_id=1_43u1yn58&flashvars[streamerType]=auto&flashvars[localizationCode]=en&flashvars[sideBarContainer.plugin]=true&flashvars[sideBarContainer.position]=left&flashvars[sideBarContainer.clickToClose]=true&flashvars[chapters.plugin]=true&flashvars[chapters.layout]=vertical&flashvars[chapters.thumbnailRotator]=false&flashvars[streamSelector.plugin]=true&flashvars[EmbedPlayer.SpinnerTarget]=videoHolder&flashvars[dualScreen.plugin]=true&flashvars[hotspots.plugin]=1&flashvars[Kaltura.addCrossoriginToIframe]=true&&wid=1_bc73oujb",
+    "options": [
+      "second",
+      "another reason",
+      "the second reason"
+    ],
+    "is_passage": true
+  },
+  {
+    "question": "Listen to the sentence. Choose the listing word or phrase you hear.",
+    "type": "multiple_choice",
+    "url": "https://cdnapisec.kaltura.com/p/1540181/sp/154018100/embedIframeJs/uiconf_id/41533392/partner_id/1540181?iframeembed=true&playerId=kaltura_player&entry_id=1_muf816nx&flashvars[streamerType]=auto&flashvars[localizationCode]=en&flashvars[sideBarContainer.plugin]=true&flashvars[sideBarContainer.position]=left&flashvars[sideBarContainer.clickToClose]=true&flashvars[chapters.plugin]=true&flashvars[chapters.layout]=vertical&flashvars[chapters.thumbnailRotator]=false&flashvars[streamSelector.plugin]=true&flashvars[EmbedPlayer.SpinnerTarget]=videoHolder&flashvars[dualScreen.plugin]=true&flashvars[hotspots.plugin]=1&flashvars[Kaltura.addCrossoriginToIframe]=true&&wid=1_6pm4cznb",
+    "options": [
+      "next",
+      "finally",
+      "another reason"
+    ],
+    "is_passage": true
+  },
+  {
+    "question": "Listen to the sentence. Choose the listing word or phrase you hear.",
+    "type": "multiple_choice",
+    "url": "https://cdnapisec.kaltura.com/p/1540181/sp/154018100/embedIframeJs/uiconf_id/41533392/partner_id/1540181?iframeembed=true&playerId=kaltura_player&entry_id=1_tcd7igkp&flashvars[streamerType]=auto&flashvars[localizationCode]=en&flashvars[sideBarContainer.plugin]=true&flashvars[sideBarContainer.position]=left&flashvars[sideBarContainer.clickToClose]=true&flashvars[chapters.plugin]=true&flashvars[chapters.layout]=vertical&flashvars[chapters.thumbnailRotator]=false&flashvars[streamSelector.plugin]=true&flashvars[EmbedPlayer.SpinnerTarget]=videoHolder&flashvars[dualScreen.plugin]=true&flashvars[hotspots.plugin]=1&flashvars[Kaltura.addCrossoriginToIframe]=true&&wid=1_ykzlc3qr",
+    "options": [
+      "first",
+      "my first reason",
+      "another reason"
+    ],
+    "is_passage": true
+  },
+  {
+    "question": "Listen to the sentence. Choose the listing word or phrase you hear.",
+    "type": "multiple_choice",
+    "url": "https://cdnapisec.kaltura.com/p/1540181/sp/154018100/embedIframeJs/uiconf_id/41533392/partner_id/1540181?iframeembed=true&playerId=kaltura_player&entry_id=1_jwk2e2y8&flashvars[streamerType]=auto&flashvars[localizationCode]=en&flashvars[sideBarContainer.plugin]=true&flashvars[sideBarContainer.position]=left&flashvars[sideBarContainer.clickToClose]=true&flashvars[chapters.plugin]=true&flashvars[chapters.layout]=vertical&flashvars[chapters.thumbnailRotator]=false&flashvars[streamSelector.plugin]=true&flashvars[EmbedPlayer.SpinnerTarget]=videoHolder&flashvars[dualScreen.plugin]=true&flashvars[hotspots.plugin]=1&flashvars[Kaltura.addCrossoriginToIframe]=true&&wid=1_9nz3rd8h",
+    "options": [
+      "another reason",
+      "next",
+      "finally"
+    ],
+    "is_passage": true
+  },
+  {
+    "question": "Mira and her friends play a new video game.",
+    "type": "multiple_choice",
+    "url": "",
+    "options": [
+      "They talk about the things they like and don't like about the game.",
+      "They sell the video game and buy a different game."
+    ],
+    "is_passage": false
+  },
+  {
+    "question": "Olivia watches a new movie.",
+    "type": "multiple_choice",
+    "url": "",
+    "options": [
+      "She tells a friend to see the movie.",
+      "She tells a friend what she likes about the movie."
+    ],
+    "is_passage": false
+  },
+  {
+    "question": "Nia is going on a trip.",
+    "type": "multiple_choice",
+    "url": "",
+    "options": [
+      "She finds out about places to go from different websites.",
+      "She buys her plane tickets from a website."
+    ],
+    "is_passage": false
+  },
+  {
+    "question": "Listen to the conversation. How do the speakers check understanding?",
+    "type": "multiple_choice",
+    "url": "https://cdnapisec.kaltura.com/p/1540181/sp/154018100/embedIframeJs/uiconf_id/41533392/partner_id/1540181?iframeembed=true&playerId=kaltura_player&entry_id=1_xh2ex670&flashvars[streamerType]=auto&flashvars[localizationCode]=en&flashvars[sideBarContainer.plugin]=true&flashvars[sideBarContainer.position]=left&flashvars[sideBarContainer.clickToClose]=true&flashvars[chapters.plugin]=true&flashvars[chapters.layout]=vertical&flashvars[chapters.thumbnailRotator]=false&flashvars[streamSelector.plugin]=true&flashvars[EmbedPlayer.SpinnerTarget]=videoHolder&flashvars[dualScreen.plugin]=true&flashvars[hotspots.plugin]=1&flashvars[Kaltura.addCrossoriginToIframe]=true&&wid=1_1v27absy",
+    "options": [
+      "one speaker asks clarifying questions",
+      "one speaker says something again in different words"
+    ],
+    "is_passage": true
+  },
+  {
+    "question": "Listen to the conversation. How do the speakers check understanding?",
+    "type": "multiple_choice",
+    "url": "https://cdnapisec.kaltura.com/p/1540181/sp/154018100/embedIframeJs/uiconf_id/41533392/partner_id/1540181?iframeembed=true&playerId=kaltura_player&entry_id=1_jkk9i905&flashvars[streamerType]=auto&flashvars[localizationCode]=en&flashvars[sideBarContainer.plugin]=true&flashvars[sideBarContainer.position]=left&flashvars[sideBarContainer.clickToClose]=true&flashvars[chapters.plugin]=true&flashvars[chapters.layout]=vertical&flashvars[chapters.thumbnailRotator]=false&flashvars[streamSelector.plugin]=true&flashvars[EmbedPlayer.SpinnerTarget]=videoHolder&flashvars[dualScreen.plugin]=true&flashvars[hotspots.plugin]=1&flashvars[Kaltura.addCrossoriginToIframe]=true&&wid=1_6jwx929i",
+    "options": [
+      "one speaker asks clarifying questions",
+      "one speaker says something again in different words"
+    ],
+    "is_passage": true
+  }
+]

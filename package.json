@@ -1,0 +1,12 @@
+{
+  "name": "kudavas-test",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test:html": "node scripts/test_html_parsing.mjs"
+  },
+  "devDependencies": {
+    "jsdom": "^24.1.0"
+  }
+}

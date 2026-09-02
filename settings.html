@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>KudaVas · Settings</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #0a0a0a;
+      color: #e5e5e5;
+      min-height: 100vh;
+      padding: 40px 20px;
+    }
+    .container { max-width: 560px; margin: 0 auto; }
+    .header { margin-bottom: 24px; }
+    .header h1 { font-size: 22px; font-weight: 700; }
+    .header .tag { font-size: 12px; color: #888; margin-top: 4px; }
+
+    .card {
+      background: #161616;
+      border: 1px solid #262626;
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 12px;
+    }
+    .card h2 {
+      font-size: 12px; font-weight: 700; color: #888;
+      text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 14px;
+    }
+    .field { margin-bottom: 14px; }
+    .field:last-child { margin-bottom: 0; }
+    .field label {
+      display: block; font-size: 12px; color: #888; margin-bottom: 6px;
+    }
+    .field input {
+      width: 100%; padding: 10px 12px; background: #0a0a0a;
+      border: 1px solid #333; border-radius: 4px; color: #fff;
+      font-size: 13px; font-family: monospace;
+    }
+    .field input:focus { outline: none; border-color: #10b981; }
+    .field .hint { font-size: 11px; color: #666; margin-top: 6px; }
+    .field .hint code {
+      background: #222; padding: 1px 6px; border-radius: 3px; color: #10b981;
+    }
+
+    .shortcut-row { display: flex; gap: 8px; align-items: center; }
+    .shortcut-display {
+      flex: 1; display: flex; align-items: center; justify-content: center; gap: 4px;
+      padding: 10px 14px; background: #0a0a0a; border: 1px solid #333;
+      border-radius: 4px; cursor: pointer; user-select: none;
+      font-size: 12px; min-height: 40px;
+    }
+    .shortcut-display:hover { border-color: #10b981; }
+    .shortcut-display.recording { border-color: #f59e0b; color: #f59e0b; }
+    .shortcut-display kbd {
+      background: #222; padding: 2px 6px; border-radius: 3px;
+      font-size: 11px; font-family: monospace;
+    }
+
+    .switch-row {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 8px 0; border-top: 1px solid #262626; margin-top: 8px;
+    }
+    .switch-row .label-block .lbl { font-size: 13px; color: #ccc; font-weight: 500; }
+    .switch-row .label-block .desc { font-size: 11px; color: #666; margin-top: 2px; }
+    .switch {
+      position: relative; width: 36px; height: 20px; background: #333;
+      border-radius: 10px; cursor: pointer; transition: background 0.15s;
+    }
+    .switch.on { background: #10b981; }
+    .switch::after {
+      content: ''; position: absolute; top: 2px; left: 2px;
+      width: 16px; height: 16px; background: white; border-radius: 50%;
+      transition: left 0.15s;
+    }
+    .switch.on::after { left: 18px; }
+
+    .btn {
+      padding: 10px 18px; background: #10b981; color: white; border: none;
+      border-radius: 4px; font-size: 13px; font-weight: 600; cursor: pointer;
+    }
+    .btn:hover { background: #059669; }
+    .btn.secondary { background: #262626; color: #ccc; }
+    .btn.secondary:hover { background: #333; }
+
+    .actions {
+      display: flex; gap: 8px; justify-content: flex-end; margin-top: 20px;
+    }
+    .status {
+      padding: 10px 14px; border-radius: 4px; font-size: 12px;
+      margin-bottom: 12px; display: none;
+    }
+    .status.ok {
+      display: block; background: rgba(16, 185, 129, 0.1);
+      border: 1px solid rgba(16, 185, 129, 0.3); color: #10b981;
+    }
+    .status.err {
+      display: block; background: rgba(239, 68, 68, 0.1);
+      border: 1px solid rgba(239, 68, 68, 0.3); color: #ef4444;
+    }
+    .footer { text-align: center; font-size: 11px; color: #555; margin-top: 32px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>⚙ Settings</h1>
+      <div class="tag">Cấu hình KudaVas extension</div>
+    </div>
+
+    <div id="status" class="status"></div>
+
+    <!-- OpenAI Key -->
+    <div class="card">
+      <h2>OpenAI</h2>
+      <div class="field">
+        <label for="api-key">API Key (sk-...)</label>
+        <input type="password" id="api-key" placeholder="sk-proj-..." autocomplete="off" />
+        <div class="hint">Lưu local qua <code>chrome.storage.local</code>.</div>
+      </div>
+      <div class="field">
+        <label for="server-url">Server URL</label>
+        <input type="text" id="server-url" placeholder="http://127.0.0.1:8765" />
+        <div class="hint">Whisper backend.</div>
+      </div>
+    </div>
+
+    <!-- Keyboard shortcut -->
+    <div class="card">
+      <h2>Keyboard Shortcut</h2>
+      <div class="field">
+        <label>Phím tắt để chạy AI (mặc định <code>Ctrl+Alt+I</code>)</label>
+        <div class="shortcut-row">
+          <div class="shortcut-display" id="shortcut-display" tabindex="0">
+            <span id="shortcut-label">Ctrl+Alt+I</span>
+          </div>
+          <button class="btn secondary" id="reset-shortcut">Reset</button>
+        </div>
+        <div class="hint">Bấm vào ô để ghi phím mới (Esc để cancel).</div>
+      </div>
+      <div class="switch-row">
+        <div class="label-block">
+          <div class="lbl">Bật phím tắt</div>
+          <div class="desc">Khi tắt, dùng nút bấm trong popup.</div>
+        </div>
+        <div class="switch on" id="shortcut-enabled"></div>
+      </div>
+    </div>
+
+    <div class="actions">
+      <button class="btn secondary" id="cancel-btn">Huỷ</button>
+      <button class="btn" id="save-btn">Lưu</button>
+    </div>
+
+    <div class="footer">@kudamii · v2.0</div>
+  </div>
+
+  <script src="settings.js"></script>
+</body>
+</html>
