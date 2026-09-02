@@ -344,6 +344,12 @@ export default function App() {
           </div>
         )}
       </main>
+
+      <footer className="app-footer">
+        <span>{t('copyright')}</span>
+        <span className="app-footer-sep">·</span>
+        <span>v2.0</span>
+      </footer>
     </div>
   );
 }

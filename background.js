@@ -262,13 +262,72 @@ async function handleSolveAndFill(tabId, openaiKey) {
       });
     } catch (e) { /* popup may be closed */ }
 
+    // 10. Show OS notification (nếu user bật trong settings).
+    try {
+      const stored = await chrome.storage.local.get('kudavas_settings');
+      const cfg = stored?.kudavas_settings || {};
+      const lang = cfg.language || 'vi';
+      const showNotif = cfg.notifyOnDone !== false;
+      if (showNotif && chrome.notifications) {
+        const nTitle = NTF[lang]?.title || NTF.vi.title;
+        const nBody  = NTF[lang]?.body(filledCount, questions.length) || NTF.vi.body(filledCount, questions.length);
+        await chrome.notifications.create('kudavas-done', {
+          type: 'basic',
+          iconUrl: 'icons/icon128.png',
+          title: nTitle,
+          message: nBody,
+        });
+      }
+    } catch (e) { /* notifications may be blocked */ }
+
     console.log(`[KudaVas] solve-and-fill complete — ${filledCount} filled`);
     return { success: true, count: questions.length, filled: filledCount };
   } catch (err) {
     console.error('[KudaVas] solve-and-fill error:', err);
+    // Notify lỗi nếu user bật
+    try {
+      const stored = await chrome.storage.local.get('kudavas_settings');
+      const cfg = stored?.kudavas_settings || {};
+      const lang = cfg.language || 'vi';
+      const showNotif = cfg.notifyOnDone !== false;
+      if (showNotif && chrome.notifications) {
+        const nTitle = NTF[lang]?.errTitle || NTF.vi.errTitle;
+        const nBody  = NTF[lang]?.errBody(err.message) || NTF.vi.errBody(err.message);
+        await chrome.notifications.create('kudavas-err', {
+          type: 'basic',
+          iconUrl: 'icons/icon128.png',
+          title: nTitle,
+          message: nBody,
+        });
+      }
+    } catch (_) {}
     return { error: err.message };
   }
 }
+
+/* ──────────────────────────────────────────────────────────────
+   Notification i18n (UI-only)
+────────────────────────────────────────────────────────────── */
+const NTF = {
+  vi: {
+    title: '🪄 Cast Spell xong!',
+    body: (filled, total) => `Đã fill ${filled}/${total} câu trả lời lên trang.`,
+    errTitle: '🪄 Cast Spell lỗi',
+    errBody: (msg) => msg || 'Có lỗi xảy ra.',
+  },
+  en: {
+    title: '🪄 Cast Spell done!',
+    body: (filled, total) => `Filled ${filled}/${total} answer(s) onto the page.`,
+    errTitle: '🪄 Cast Spell error',
+    errBody: (msg) => msg || 'Something went wrong.',
+  },
+  th: {
+    title: '🪄 Cast Spell เสร็จแล้ว!',
+    body: (filled, total) => `เติมคำตอบ ${filled}/${total} ข้อลงหน้าแล้ว`,
+    errTitle: '🪄 Cast Spell ผิดพลาด',
+    errBody: (msg) => msg || 'เกิดข้อผิดพลาด',
+  },
+};
 
 /* ──────────────────────────────────────────────────────────────
    Clean cache when a tab is closed

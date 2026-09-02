@@ -5,7 +5,8 @@
 const I18N = {
   vi: {
     brand_name: 'KudaVas Dashboard',
-    brand_tag: '🪄 Cast Spell — cào + giải trong 1 bấm',
+    brand_tag: 'Bản thử nghiệm nên sẽ có những câu chưa làm được',
+    copyright: '@Kudamii',
     btn_scrape: '🪄 Cast Spell',
     btn_scraping: '⏳ Đang xử lý…',
     btn_scrape_title: '🪄 Cast Spell',
@@ -67,7 +68,8 @@ const I18N = {
   },
   en: {
     brand_name: 'KudaVas Dashboard',
-    brand_tag: '🪄 Cast Spell — one click quiz solver',
+    brand_tag: 'Experimental — some questions may not be solvable yet',
+    copyright: '@Kudamii',
     btn_scrape: '🪄 Cast Spell',
     btn_scraping: '⏳ Working…',
     btn_scrape_title: '🪄 Cast Spell',
@@ -129,7 +131,8 @@ const I18N = {
   },
   th: {
     brand_name: 'KudaVas Dashboard',
-    brand_tag: '🪄 Cast Spell — ขูด + แก้ในคลิกเดียว',
+    brand_tag: 'เวอร์ชันทดลอง — อาจมีคำถามบางข้อที่ยังแก้ไม่ได้',
+    copyright: '@Kudamii',
     btn_scrape: '🪄 Cast Spell',
     btn_scraping: '⏳ กำลังทำงาน…',
     btn_scrape_title: '🪄 Cast Spell',

@@ -8,6 +8,7 @@ const DEFAULTS = {
   shortcut: 'Ctrl+Alt+I',
   shortcutEnabled: true,
   language: 'vi',
+  notifyOnDone: true,
 };
 
 // ── i18n strings (UI only — prompts/AI untouched) ──────────
@@ -28,6 +29,9 @@ const I18N = {
     enable_shortcut_desc: 'Khi tắt, dùng nút bấm trong popup.',
     section_language: 'Language',
     language_desc: 'Áp dụng cho giao diện này và popup. Không ảnh hưởng prompt/AI.',
+    section_notifications: 'Notifications',
+    notify_done_label: 'Hiện thông báo khi xong',
+    notify_done_desc: 'Bật/tắt popup hệ thống sau khi Cast Spell fill xong câu trả lời.',
     save: 'Lưu',
     cancel: 'Huỷ',
     status_saved: 'Đã lưu!',
@@ -54,6 +58,9 @@ const I18N = {
     enable_shortcut_desc: 'When off, use the button in the popup.',
     section_language: 'Language',
     language_desc: 'Affects this page and the popup only. Does NOT change prompts or AI behaviour.',
+    section_notifications: 'Notifications',
+    notify_done_label: 'Show notification when done',
+    notify_done_desc: 'Toggle the OS-level popup after Cast Spell finishes filling answers.',
     save: 'Save',
     cancel: 'Cancel',
     status_saved: 'Saved!',
@@ -80,6 +87,9 @@ const I18N = {
     enable_shortcut_desc: 'ปิดแล้วใช้ปุ่มใน popup แทน',
     section_language: 'ภาษา',
     language_desc: 'ใช้กับหน้านี้และ popup เท่านั้น ไม่กระทบ prompt/AI',
+    section_notifications: 'การแจ้งเตือน',
+    notify_done_label: 'แสดงแจ้งเตือนเมื่อเสร็จ',
+    notify_done_desc: 'เปิด/ปิด popup ของระบบหลัง Cast Spell เติมคำตอบเสร็จ',
     save: 'บันทึก',
     cancel: 'ยกเลิก',
     status_saved: 'บันทึกแล้ว!',
@@ -121,6 +131,7 @@ async function load() {
   applyTranslations();
   renderShortcut();
   renderSwitch();
+  renderNotify();
 }
 
 function applyTranslations() {
@@ -139,6 +150,9 @@ function applyTranslations() {
   $('enable-shortcut-desc').textContent = t('enable_shortcut_desc');
   $('section-language').textContent = t('section_language');
   $('language-desc').textContent = t('language_desc');
+  $('section-notifications').textContent = t('section_notifications');
+  $('notify-done-label').textContent = t('notify_done_label');
+  $('notify-done-desc').textContent = t('notify_done_desc');
   $('save-btn').textContent = t('save');
   $('cancel-btn').textContent = t('cancel');
   // language options
@@ -154,6 +168,11 @@ function renderShortcut() {
 function renderSwitch() {
   const sw = $('shortcut-enabled');
   sw.classList.toggle('on', state.shortcutEnabled);
+}
+
+function renderNotify() {
+  const sw = $('notify-done');
+  sw.classList.toggle('on', state.notifyOnDone);
 }
 
 function formatShortcut(s) {
@@ -236,6 +255,12 @@ $('shortcut-enabled').addEventListener('click', () => {
   renderSwitch();
 });
 
+// ── Notify switch ────────────────────────────────────────
+$('notify-done').addEventListener('click', () => {
+  state.notifyOnDone = !state.notifyOnDone;
+  renderNotify();
+});
+
 // ── Reset shortcut ─────────────────────────────────────────
 $('reset-shortcut-btn').addEventListener('click', () => {
   state.shortcut = DEFAULTS.shortcut;
@@ -248,6 +273,7 @@ $('language-select').addEventListener('change', (e) => {
   applyTranslations();
   renderShortcut();
   renderSwitch();
+  renderNotify();
 });
 
 // ── Save ───────────────────────────────────────────────────
@@ -263,6 +289,7 @@ $('save-btn').addEventListener('click', async () => {
   state.openaiKey = key;
   state.serverUrl = url.replace(/\/+$/, '');
   state.language = lang;
+  state.notifyOnDone = state.notifyOnDone !== false;  // default true
   currentLang = lang;
 
   await chrome.storage.local.set({ kudavas_settings: state });

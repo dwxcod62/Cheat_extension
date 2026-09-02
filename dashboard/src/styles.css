@@ -365,3 +365,19 @@ button.icon { padding: 6px 8px; }
 }
 .content::-webkit-scrollbar-thumb:hover { background: #3a4049; }
 
+/* App footer (copyright) */
+.app-footer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 20px;
+  font-size: 11px;
+  color: #555;
+  border-top: 1px solid var(--border);
+  background: var(--bg);
+  flex-shrink: 0;
+}
+.app-footer-sep { color: #333; }
+.content::-webkit-scrollbar-thumb:hover { background: #3a4049; }
+
