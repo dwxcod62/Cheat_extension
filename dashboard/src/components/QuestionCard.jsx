@@ -1,17 +1,18 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
+import { t, onLanguageChange } from '../i18n.js';
 
-const TYPE_LABELS = {
-  multiple_choice: 'Trắc nghiệm',
-  true_false: 'Đúng/Sai',
-  checkbox: 'Nhiều đáp án',
-  matching: 'Ghép đôi',
-  multiple_dropdowns: 'Điền nhiều chỗ trống',
-  text_input: 'Tự luận',
-  short_answer_question: 'Trả lời ngắn',
-  essay_question: 'Tự luận dài',
-  fill_in_multiple_blanks_question: 'Điền vào chỗ trống',
-  numerical_question: 'Số',
-  'non-question': 'Media',
+const TYPE_LABEL_KEYS = {
+  multiple_choice: 'type_multiple_choice',
+  true_false: 'type_true_false',
+  checkbox: 'type_checkbox',
+  matching: 'type_matching',
+  multiple_dropdowns: 'type_multiple_dropdowns',
+  text_input: 'type_text_input',
+  short_answer_question: 'type_short_answer_question',
+  essay_question: 'type_essay_question',
+  fill_in_multiple_blanks_question: 'type_fill_in_multiple_blanks_question',
+  numerical_question: 'type_numerical_question',
+  'non-question': 'type_non_question',
 };
 
 function formatAnswer(ans) {
@@ -22,6 +23,10 @@ function formatAnswer(ans) {
 }
 
 export default function QuestionCard({ q, solved }) {
+  // re-render on language change
+  const [, force] = useState(0);
+  useEffect(() => onLanguageChange(() => force(n => n + 1)), []);
+
   const cardCls = [
     'q-card',
     q.is_passage ? 'passage' : '',
@@ -29,7 +34,7 @@ export default function QuestionCard({ q, solved }) {
     solved ? 'solved' : '',
   ].filter(Boolean).join(' ');
 
-  const typeLabel = TYPE_LABELS[q.type] || q.type || 'unknown';
+  const typeLabel = t(TYPE_LABEL_KEYS[q.type]) || q.type || 'unknown';
   const answerText = formatAnswer(solved?.answer);
   const hasAnswer = answerText !== '';
 
@@ -41,13 +46,17 @@ export default function QuestionCard({ q, solved }) {
           <span className={`q-type ${q.type}`}>{typeLabel}</span>
           {q.is_passage && (
             <span className="q-type multiple_choice" style={{ background: 'rgba(56,189,248,0.12)', color: '#38bdf8' }}>
-              Passage
+              {t('badge_passage')}
             </span>
           )}
         </div>
         <div>
-          {q.url && <span className="q-type" style={{ background: 'rgba(250,204,21,0.12)', color: '#facc15' }}>🔊 có media</span>}
-          {hasAnswer && <span className="q-type solved-badge">✓ AI trả lời</span>}
+          {q.url && (
+            <span className="q-type" style={{ background: 'rgba(250,204,21,0.12)', color: '#facc15' }}>
+              {t('badge_has_media')}
+            </span>
+          )}
+          {hasAnswer && <span className="q-type solved-badge">{t('badge_ai_answered')}</span>}
         </div>
       </div>
 
@@ -95,7 +104,7 @@ export default function QuestionCard({ q, solved }) {
 
         {hasAnswer && (
           <div className="q-answer">
-            <span className="q-answer-label">AI answer:</span>
+            <span className="q-answer-label">{t('answer_label')}</span>
             <span className="q-answer-text">{answerText}</span>
           </div>
         )}

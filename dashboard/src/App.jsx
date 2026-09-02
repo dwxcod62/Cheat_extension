@@ -1,22 +1,25 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import QuestionCard from './components/QuestionCard.jsx';
 import EmptyState from './components/EmptyState.jsx';
+import { t, loadStoredLanguage, onLanguageChange, getLanguage } from './i18n.js';
 
 const SERVER = 'http://127.0.0.1:8765';
 const KEY_STORAGE = 'kudavas_openai_key';
 
 const isExt = typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.id;
 
-const TYPE_FILTERS = [
-  { id: 'all', label: 'Tất cả' },
-  { id: 'multiple_choice', label: 'Trắc nghiệm' },
-  { id: 'true_false', label: 'Đúng/Sai' },
-  { id: 'checkbox', label: 'Nhiều đáp án' },
-  { id: 'matching', label: 'Ghép đôi' },
-  { id: 'multiple_dropdowns', label: 'Điền nhiều chỗ' },
-  { id: 'text_input', label: 'Tự luận' },
-  { id: 'audio', label: 'Có audio' },
-];
+const FILTER_IDS = ['all', 'multiple_choice', 'true_false', 'checkbox', 'matching', 'multiple_dropdowns', 'text_input', 'audio'];
+
+const FILTER_LABEL_KEYS = {
+  all: 'filter_all',
+  multiple_choice: 'filter_multiple_choice',
+  true_false: 'filter_true_false',
+  checkbox: 'filter_checkbox',
+  matching: 'filter_matching',
+  multiple_dropdowns: 'filter_multiple_dropdowns',
+  text_input: 'filter_text_input',
+  audio: 'filter_audio',
+};
 
 export default function App() {
   const [questions, setQuestions] = useState([]);
@@ -24,36 +27,41 @@ export default function App() {
   const [scrapedTab, setScrapedTab] = useState(null);
   const [filter, setFilter] = useState('all');
   const [search, setSearch] = useState('');
-  const [status, setStatus] = useState({ state: 'idle', msg: 'Sẵn sàng', detail: '' });
+  const [status, setStatus] = useState({ state: 'idle' });
   const [scraping, setScraping] = useState(false);
-
-  // OpenAI key — lưu localStorage để user khỏi nhập lại mỗi lần mở popup
   const [openaiKey, setOpenaiKey] = useState('');
   const [showKey, setShowKey] = useState(false);
+  const [, forceRerender] = useState(0);
 
+  // Initial load: storage key + language
   useEffect(() => {
     (async () => {
-      // Prefer chrome.storage.local (settings page) over localStorage (legacy)
       try {
         const stored = await chrome.storage.local.get('kudavas_settings');
         if (stored?.kudavas_settings?.openaiKey) {
           setOpenaiKey(stored.kudavas_settings.openaiKey);
-          return;
         }
       } catch (_) {}
       try {
         const saved = localStorage.getItem(KEY_STORAGE);
-        if (saved) setOpenaiKey(saved);
+        if (saved && !openaiKey) setOpenaiKey(saved);
       } catch (_) {}
     })();
+    loadStoredLanguage().then(() => forceRerender(n => n + 1));
+    const off = onLanguageChange(() => forceRerender(n => n + 1));
+    return () => off();
   }, []);
 
   // Listen for settings updates from settings page
   useEffect(() => {
     if (!isExt) return;
     const listener = (msg) => {
-      if (msg.action === 'settings-updated' && msg.settings?.openaiKey) {
-        setOpenaiKey(msg.settings.openaiKey);
+      if (msg.action === 'settings-updated') {
+        if (msg.settings?.openaiKey) setOpenaiKey(msg.settings.openaiKey);
+        if (msg.settings?.language) {
+          // i18n module already updated via setLanguage — just re-render
+          forceRerender(n => n + 1);
+        }
       }
     };
     chrome.runtime.onMessage.addListener(listener);
@@ -72,7 +80,11 @@ export default function App() {
       if (chrome.runtime.lastError) return;
       if (resp?.questions) {
         setQuestions(resp.questions);
-        setStatus({ state: 'done', msg: `Đã tải ${resp.questions.length} câu hỏi`, detail: 'Từ tab đang hoạt động' });
+        setStatus({
+          state: 'done',
+          msg: t('status_loaded', resp.questions.length),
+          detail: t('status_loaded_detail'),
+        });
       }
     });
   }, []);
@@ -83,7 +95,11 @@ export default function App() {
     const listener = (msg) => {
       if (msg.action === 'questions-updated' && msg.questions) {
         setQuestions(msg.questions);
-        setStatus({ state: 'done', msg: `Đã cập nhật ${msg.questions.length} câu hỏi`, detail: msg.detail || '' });
+        setStatus({
+          state: 'done',
+          msg: t('status_updated', msg.questions.length),
+          detail: msg.detail || '',
+        });
       }
     };
     chrome.runtime.onMessage.addListener(listener);
@@ -95,20 +111,22 @@ export default function App() {
     if (scraping) return;
 
     if (!openaiKey.trim()) {
-      setStatus({ state: 'error', msg: 'Chưa có OpenAI key', detail: 'Dán sk-... vào ô phía trên rồi bấm lại.' });
+      setStatus({
+        state: 'error',
+        msg: t('status_no_key'),
+        detail: t('status_no_key_detail'),
+      });
       return;
     }
 
     setScraping(true);
-    setStatus({ state: 'running', msg: 'Đang cào + giải + fill…', detail: '' });
+    setStatus({ state: 'running', msg: t('status_running'), detail: '' });
 
     try {
-      // 1. Lấy tab đang mở
       const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
       if (!tab?.id) throw new Error('Không tìm thấy tab đang hoạt động');
       setScrapedTab(tab);
 
-      // 2. Gọi atomic handler trong background (scrape + solve + fill)
       const resp = await chrome.runtime.sendMessage({
         action: 'solve-and-fill',
         tabId: tab.id,
@@ -120,28 +138,22 @@ export default function App() {
       const filledCount = resp?.filled ?? 0;
       const total = resp?.count ?? 0;
 
-      // 3. Load lại questions từ cache (để dashboard show)
       const after = await chrome.runtime.sendMessage({ action: 'get-active-questions' });
       const qs = after?.questions || [];
       setQuestions(qs);
 
-      // Reconstruct solvedList từ cache (background đã cache solvedAnswers)
-      const solvedList = (qs || []).map(q => ({
-        index: q.index,
-        type: q.type,
-        question: q.question || '',
-        url: q.url || '',
-        answer: '', // background không expose solvedAnswers; để user review dùng modal riêng nếu cần
-      }));
-
       setStatus({
         state: 'done',
-        msg: `Xong ${filledCount}/${total} câu`,
-        detail: isExt ? `Đã fill ${filledCount} câu lên trang` : '',
+        msg: t('status_done', filledCount, total),
+        detail: isExt ? t('status_done_detail', filledCount) : '',
       });
     } catch (err) {
       console.error(err);
-      setStatus({ state: 'error', msg: 'Lỗi: ' + err.message, detail: '' });
+      setStatus({
+        state: 'error',
+        msg: t('status_error_prefix') + err.message,
+        detail: '',
+      });
     } finally {
       setScraping(false);
     }
@@ -170,14 +182,17 @@ export default function App() {
     return c;
   }, [questions]);
 
+  // Default status text for idle
+  const statusMsg = status.msg ?? (status.state === 'idle' ? t('status_idle') : '');
+
   return (
     <div className="app">
       <header className="header">
         <div className="brand">
           <div className="brand-logo">K</div>
           <div>
-            <div className="brand-name">KudaVas Dashboard</div>
-            <div className="brand-tag">Cào + AI solve trong 1 bấm</div>
+            <div className="brand-name">{t('brand_name')}</div>
+            <div className="brand-tag">{t('brand_tag')}</div>
           </div>
         </div>
         <div className="toolbar">
@@ -186,15 +201,19 @@ export default function App() {
               className="primary"
               onClick={handleScrape}
               disabled={scraping}
-              title={openaiKey.trim() ? 'Cào + gửi AI solve' : 'Cần OpenAI key trước'}
+              title={openaiKey.trim() ? t('btn_scrape_title') : t('btn_scrape_title_no_key')}
             >
-              {scraping ? '⏳ Đang xử lý…' : '▶ Cào + AI'}
+              {scraping ? t('btn_scraping') : t('btn_scrape')}
             </button>
           )}
           <button
             className="ghost"
-            onClick={() => { setQuestions([]); setSolved([]); setStatus({ state: 'idle', msg: 'Đã xoá', detail: '' }); }}
-            title="Xoá danh sách câu hỏi"
+            onClick={() => {
+              setQuestions([]);
+              setSolved([]);
+              setStatus({ state: 'idle', msg: t('status_cleared'), detail: '' });
+            }}
+            title={t('btn_clear_title')}
           >
             🗑
           </button>
@@ -204,14 +223,14 @@ export default function App() {
       {/* ─── OpenAI key input ─── */}
       <div className="key-bar">
         <label className="key-label" htmlFor="openai-key">
-          🔑 OpenAI Key
+          {t('key_label')}
         </label>
         <div className="key-input-wrap">
           <input
             id="openai-key"
             className="key-input"
             type={showKey ? 'text' : 'password'}
-            placeholder="sk-..."
+            placeholder={t('key_placeholder')}
             value={openaiKey}
             onChange={e => persistKey(e.target.value)}
             spellCheck={false}
@@ -221,7 +240,7 @@ export default function App() {
             className="key-toggle"
             onClick={() => setShowKey(s => !s)}
             type="button"
-            title={showKey ? 'Ẩn key' : 'Hiện key'}
+            title={showKey ? t('key_hide') : t('key_show')}
           >
             {showKey ? '🙈' : '👁'}
           </button>
@@ -230,7 +249,7 @@ export default function App() {
               className="key-clear"
               onClick={() => persistKey('')}
               type="button"
-              title="Xoá key"
+              title={t('key_clear')}
             >
               ✕
             </button>
@@ -242,14 +261,17 @@ export default function App() {
             onClick={() => {
               persistKey('');
               setShowKey(true);
-              setStatus({ state: 'idle', msg: 'Đã xoá key', detail: 'Nhập key mới rồi bấm "▶ Cào + AI"' });
-              // focus input sau khi state update
+              setStatus({
+                state: 'idle',
+                msg: t('status_key_cleared'),
+                detail: t('status_key_cleared_detail'),
+              });
               setTimeout(() => document.getElementById('openai-key')?.focus(), 0);
             }}
             type="button"
-            title={openaiKey ? 'Xoá key hiện tại để nhập key mới' : 'Nhập OpenAI key'}
+            title={openaiKey ? t('key_change_title_with') : t('key_change_title_without')}
           >
-            🔑 Đổi key
+            {t('key_change')}
           </button>
           <button
             className="key-change-btn"
@@ -261,9 +283,9 @@ export default function App() {
               }
             }}
             type="button"
-            title="Mở trang Settings (tab mới)"
+            title={t('btn_open_settings_title')}
           >
-            ⚙ Settings
+            {t('btn_open_settings')}
           </button>
         </div>
       </div>
@@ -271,30 +293,36 @@ export default function App() {
       <div className="status-bar">
         <div className="status-pill">
           <span className={`status-dot ${status.state}`} />
-          <span>{status.msg}</span>
+          <span>{statusMsg}</span>
           {status.detail && <span style={{ color: 'var(--text-mute)' }}>· {status.detail}</span>}
         </div>
         <div className="stats">
-          <span className="stat"><span className="stat-value">{filtered.length}</span> / {questions.length} hiển thị</span>
-          {counts.audio > 0 && <span className="stat">🔊 <span className="stat-value">{counts.audio}</span> media</span>}
+          <span className="stat">
+            <span className="stat-value">{filtered.length}</span> / {t('stat_visible', filtered.length, questions.length).split('/').slice(1).join('/').trim()}
+          </span>
+          {counts.audio > 0 && (
+            <span className="stat">
+              <span className="stat-value">{counts.audio}</span> {t('stat_audio', counts.audio).split(/\s/).slice(1).join(' ')}
+            </span>
+          )}
         </div>
       </div>
 
       {questions.length > 0 && (
         <div className="filters">
-          {TYPE_FILTERS.map(f => (
+          {FILTER_IDS.map(id => (
             <span
-              key={f.id}
-              className={`chip ${filter === f.id ? 'active' : ''}`}
-              onClick={() => setFilter(f.id)}
+              key={id}
+              className={`chip ${filter === id ? 'active' : ''}`}
+              onClick={() => setFilter(id)}
             >
-              {f.label}
-              {f.id !== 'all' && counts[f.id] ? ` (${counts[f.id]})` : f.id === 'all' ? ` (${counts.all})` : ''}
+              {t(FILTER_LABEL_KEYS[id])}
+              {id !== 'all' && counts[id] ? ` (${counts[id]})` : id === 'all' ? ` (${counts.all})` : ''}
             </span>
           ))}
           <input
             className="search-input"
-            placeholder="Tìm trong câu hỏi…"
+            placeholder={t('search_placeholder')}
             value={search}
             onChange={e => setSearch(e.target.value)}
           />
@@ -304,12 +332,10 @@ export default function App() {
       <main className="content">
         {questions.length === 0 ? (
           <EmptyState
-            hint={isExt
-              ? 'Mở một trang HTML có câu hỏi, dán OpenAI key vào ô phía trên, bấm "▶ Cào + AI" để bắt đầu.'
-              : 'Đây là dashboard standalone. Build dashboard rồi load dist/dashboard/index.html vào extension popup.'}
+            hint={isExt ? t('empty_hint_ext') : t('empty_hint_dev')}
           />
         ) : filtered.length === 0 ? (
-          <EmptyState hint="Không có câu hỏi nào khớp bộ lọc hiện tại." />
+          <EmptyState hint={t('empty_hint_filter')} />
         ) : (
           <div className="q-list">
             {filtered.map(q => (

@@ -1,12 +1,16 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
+import { t, onLanguageChange } from '../i18n.js';
 
 export default function EmptyState({ hint }) {
+  const [, force] = useState(0);
+  useEffect(() => onLanguageChange(() => force(n => n + 1)), []);
+
   return (
     <div className="empty">
       <div className="empty-icon">📋</div>
-      <div className="empty-title">Chưa có câu hỏi nào</div>
+      <div className="empty-title">{t('empty_title')}</div>
       <div className="empty-hint">
-        {hint || 'Mở một trang HTML có câu hỏi (Canvas Quiz chẳng hạn), sau đó bấm nút "Cào câu hỏi" ở góc trên bên phải.'}
+        {hint || t('empty_hint_ext')}
       </div>
     </div>
   );

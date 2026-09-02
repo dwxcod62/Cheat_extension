@@ -40,6 +40,16 @@
       font-size: 13px; font-family: monospace;
     }
     .field input:focus { outline: none; border-color: #10b981; }
+    .field select {
+      width: 100%; padding: 10px 12px; background: #0a0a0a;
+      border: 1px solid #333; border-radius: 4px; color: #fff;
+      font-size: 13px; cursor: pointer; appearance: none;
+      background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'><path fill='%23888' d='M5 6L0 0h10z'/></svg>");
+      background-repeat: no-repeat; background-position: right 12px center;
+      padding-right: 36px;
+    }
+    .field select:focus { outline: none; border-color: #10b981; }
+    .lang-select option { background: #0a0a0a; color: #fff; }
     .field .hint { font-size: 11px; color: #666; margin-top: 6px; }
     .field .hint code {
       background: #222; padding: 1px 6px; border-radius: 3px; color: #10b981;
@@ -106,46 +116,60 @@
 <body>
   <div class="container">
     <div class="header">
-      <h1>⚙ Settings</h1>
-      <div class="tag">Cấu hình KudaVas extension</div>
+      <h1 id="title-text">⚙ Settings</h1>
+      <div class="tag" id="subtitle-text">Cấu hình KudaVas extension</div>
     </div>
 
     <div id="status" class="status"></div>
 
     <!-- OpenAI Key -->
     <div class="card">
-      <h2>OpenAI</h2>
+      <h2 id="section-openai">OpenAI</h2>
       <div class="field">
-        <label for="api-key">API Key (sk-...)</label>
+        <label for="api-key" id="api-key-label">API Key (sk-...)</label>
         <input type="password" id="api-key" placeholder="sk-proj-..." autocomplete="off" />
-        <div class="hint">Lưu local qua <code>chrome.storage.local</code>.</div>
+        <div class="hint" id="api-key-hint">Lưu local qua <code>chrome.storage.local</code>.</div>
       </div>
       <div class="field">
-        <label for="server-url">Server URL</label>
+        <label for="server-url" id="server-url-label">Server URL</label>
         <input type="text" id="server-url" placeholder="http://127.0.0.1:8765" />
-        <div class="hint">Whisper backend.</div>
+        <div class="hint" id="server-url-hint">Whisper backend.</div>
       </div>
     </div>
 
     <!-- Keyboard shortcut -->
     <div class="card">
-      <h2>Keyboard Shortcut</h2>
+      <h2 id="section-shortcut">Keyboard Shortcut</h2>
       <div class="field">
-        <label>Phím tắt để chạy AI (mặc định <code>Ctrl+Alt+I</code>)</label>
+        <label id="shortcut-label-text">Phím tắt để chạy AI (mặc định <code>Ctrl+Alt+I</code>)</label>
         <div class="shortcut-row">
           <div class="shortcut-display" id="shortcut-display" tabindex="0">
             <span id="shortcut-label">Ctrl+Alt+I</span>
           </div>
-          <button class="btn secondary" id="reset-shortcut">Reset</button>
+          <button class="btn secondary" id="reset-shortcut-btn">Reset</button>
         </div>
-        <div class="hint">Bấm vào ô để ghi phím mới (Esc để cancel).</div>
+        <div class="hint" id="shortcut-hint">Bấm vào ô để ghi phím mới (Esc để cancel).</div>
       </div>
       <div class="switch-row">
         <div class="label-block">
-          <div class="lbl">Bật phím tắt</div>
-          <div class="desc">Khi tắt, dùng nút bấm trong popup.</div>
+          <div class="lbl" id="enable-shortcut-label">Bật phím tắt</div>
+          <div class="desc" id="enable-shortcut-desc">Khi tắt, dùng nút bấm trong popup.</div>
         </div>
         <div class="switch on" id="shortcut-enabled"></div>
+      </div>
+    </div>
+
+    <!-- Language -->
+    <div class="card">
+      <h2 id="section-language">Language</h2>
+      <div class="field">
+        <label for="language-select" id="language-label">Ngôn ngữ giao diện</label>
+        <select id="language-select" class="lang-select">
+          <option value="en" id="lang-en-option">English</option>
+          <option value="vi" id="lang-vi-option">Tiếng Việt</option>
+          <option value="th" id="lang-th-option">ไทย</option>
+        </select>
+        <div class="hint" id="language-desc">Áp dụng cho giao diện này và popup. Không ảnh hưởng prompt/AI.</div>
       </div>
     </div>
 

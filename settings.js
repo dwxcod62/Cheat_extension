@@ -1,4 +1,4 @@
-// settings.js — manage OpenAI key + keyboard shortcut (opened as standalone page)
+// settings.js — manage OpenAI key + keyboard shortcut + UI language (opened as standalone page)
 
 const $ = (id) => document.getElementById(id);
 
@@ -7,7 +7,98 @@ const DEFAULTS = {
   serverUrl: 'http://127.0.0.1:8765',
   shortcut: 'Ctrl+Alt+I',
   shortcutEnabled: true,
+  language: 'vi',
 };
+
+// ── i18n strings (UI only — prompts/AI untouched) ──────────
+const I18N = {
+  vi: {
+    title: '⚙ Settings',
+    subtitle: 'Cấu hình KudaVas extension',
+    section_openai: 'OpenAI',
+    api_key: 'API Key (sk-...)',
+    api_key_hint: 'Lưu local qua chrome.storage.local.',
+    server_url: 'Server URL',
+    server_url_hint: 'Whisper backend.',
+    section_shortcut: 'Keyboard Shortcut',
+    shortcut_label: 'Phím tắt để chạy AI (mặc định Ctrl+Alt+I)',
+    shortcut_hint: 'Bấm vào ô để ghi phím mới (Esc để cancel).',
+    reset_shortcut: 'Reset',
+    enable_shortcut: 'Bật phím tắt',
+    enable_shortcut_desc: 'Khi tắt, dùng nút bấm trong popup.',
+    section_language: 'Language',
+    language_desc: 'Áp dụng cho giao diện này và popup. Không ảnh hưởng prompt/AI.',
+    save: 'Lưu',
+    cancel: 'Huỷ',
+    status_saved: 'Đã lưu!',
+    status_reserved: (sc) => `"${sc}" là phím của trình duyệt. Chọn phím khác.`,
+    status_url_empty: 'Server URL không được trống',
+    recording_hint: 'Bấm phím bất kỳ…',
+    lang_en: 'English',
+    lang_vi: 'Tiếng Việt',
+    lang_th: 'ไทย',
+  },
+  en: {
+    title: '⚙ Settings',
+    subtitle: 'Configure KudaVas extension',
+    section_openai: 'OpenAI',
+    api_key: 'API Key (sk-...)',
+    api_key_hint: 'Stored locally via chrome.storage.local.',
+    server_url: 'Server URL',
+    server_url_hint: 'Whisper backend.',
+    section_shortcut: 'Keyboard Shortcut',
+    shortcut_label: 'Hotkey to trigger AI (default Ctrl+Alt+I)',
+    shortcut_hint: 'Click the box to record a new key (Esc to cancel).',
+    reset_shortcut: 'Reset',
+    enable_shortcut: 'Enable hotkey',
+    enable_shortcut_desc: 'When off, use the button in the popup.',
+    section_language: 'Language',
+    language_desc: 'Affects this page and the popup only. Does NOT change prompts or AI behaviour.',
+    save: 'Save',
+    cancel: 'Cancel',
+    status_saved: 'Saved!',
+    status_reserved: (sc) => `"${sc}" is reserved by the browser. Pick another.`,
+    status_url_empty: 'Server URL cannot be empty',
+    recording_hint: 'Press any key…',
+    lang_en: 'English',
+    lang_vi: 'Tiếng Việt',
+    lang_th: 'ไทย',
+  },
+  th: {
+    title: '⚙ ตั้งค่า',
+    subtitle: 'ตั้งค่า KudaVas extension',
+    section_openai: 'OpenAI',
+    api_key: 'API Key (sk-...)',
+    api_key_hint: 'จัดเก็บใน chrome.storage.local',
+    server_url: 'Server URL',
+    server_url_hint: 'Whisper backend',
+    section_shortcut: 'คีย์ลัด',
+    shortcut_label: 'คีย์ลัดเรียก AI (ค่าเริ่มต้น Ctrl+Alt+I)',
+    shortcut_hint: 'คลิกช่องเพื่อบันทึกคีย์ใหม่ (Esc เพื่อยกเลิก)',
+    reset_shortcut: 'รีเซ็ต',
+    enable_shortcut: 'เปิดใช้คีย์ลัด',
+    enable_shortcut_desc: 'ปิดแล้วใช้ปุ่มใน popup แทน',
+    section_language: 'ภาษา',
+    language_desc: 'ใช้กับหน้านี้และ popup เท่านั้น ไม่กระทบ prompt/AI',
+    save: 'บันทึก',
+    cancel: 'ยกเลิก',
+    status_saved: 'บันทึกแล้ว!',
+    status_reserved: (sc) => `"${sc}" เป็นคีย์ของเบราว์เซอร์ เลือกคีย์อื่น`,
+    status_url_empty: 'Server URL ต้องไม่ว่าง',
+    recording_hint: 'กดคีย์ใดก็ได้…',
+    lang_en: 'English',
+    lang_vi: 'Tiếng Việt',
+    lang_th: 'ไทย',
+  },
+};
+
+let currentLang = 'vi';
+function t(key) {
+  const dict = I18N[currentLang] || I18N.vi;
+  const val = dict[key];
+  if (val === undefined) return I18N.vi[key] || key;
+  return typeof val === 'function' ? val : val;
+}
 
 // Reserved browser shortcuts we should never bind
 const RESERVED = new Set([
@@ -23,10 +114,37 @@ let recording = false;
 async function load() {
   const stored = await chrome.storage.local.get('kudavas_settings');
   state = { ...DEFAULTS, ...(stored.kudavas_settings || {}) };
+  currentLang = state.language || 'vi';
   $('api-key').value = state.openaiKey;
   $('server-url').value = state.serverUrl;
+  $('language-select').value = currentLang;
+  applyTranslations();
   renderShortcut();
   renderSwitch();
+}
+
+function applyTranslations() {
+  $('title-text').innerHTML = t('title');
+  $('subtitle-text').textContent = t('subtitle');
+  $('section-openai').textContent = t('section_openai');
+  $('api-key-label').textContent = t('api_key');
+  $('api-key-hint').textContent = t('api_key_hint');
+  $('server-url-label').textContent = t('server_url');
+  $('server-url-hint').textContent = t('server_url_hint');
+  $('section-shortcut').textContent = t('section_shortcut');
+  $('shortcut-label-text').innerHTML = t('shortcut_label');
+  $('shortcut-hint').textContent = t('shortcut_hint');
+  $('reset-shortcut-btn').textContent = t('reset_shortcut');
+  $('enable-shortcut-label').textContent = t('enable_shortcut');
+  $('enable-shortcut-desc').textContent = t('enable_shortcut_desc');
+  $('section-language').textContent = t('section_language');
+  $('language-desc').textContent = t('language_desc');
+  $('save-btn').textContent = t('save');
+  $('cancel-btn').textContent = t('cancel');
+  // language options
+  $('lang-en-option').textContent = t('lang_en');
+  $('lang-vi-option').textContent = t('lang_vi');
+  $('lang-th-option').textContent = t('lang_th');
 }
 
 function renderShortcut() {
@@ -75,7 +193,7 @@ function startRecording() {
   const disp = $('shortcut-display');
   disp.classList.add('recording');
   disp.focus();
-  $('shortcut-label').textContent = 'Bấm phím bất kỳ…';
+  $('shortcut-label').textContent = t('recording_hint');
 }
 
 function stopRecording(saved = true) {
@@ -103,7 +221,7 @@ function onRecordKey(e) {
   if (parts.length < 2) return;
 
   if (RESERVED.has(sc)) {
-    showStatus(`"${sc}" là phím của trình duyệt. Chọn phím khác.`, false);
+    showStatus(t('status_reserved')(sc), false);
     return;
   }
 
@@ -119,25 +237,36 @@ $('shortcut-enabled').addEventListener('click', () => {
 });
 
 // ── Reset shortcut ─────────────────────────────────────────
-$('reset-shortcut').addEventListener('click', () => {
+$('reset-shortcut-btn').addEventListener('click', () => {
   state.shortcut = DEFAULTS.shortcut;
   renderShortcut();
+});
+
+// ── Language preview (live update, no save) ──────────────
+$('language-select').addEventListener('change', (e) => {
+  currentLang = e.target.value;
+  applyTranslations();
+  renderShortcut();
+  renderSwitch();
 });
 
 // ── Save ───────────────────────────────────────────────────
 $('save-btn').addEventListener('click', async () => {
   const key = $('api-key').value.trim();
   const url = $('server-url').value.trim();
+  const lang = $('language-select').value;
   if (!url) {
-    showStatus('Server URL không được trống', false);
+    showStatus(t('status_url_empty'), false);
     return;
   }
 
   state.openaiKey = key;
   state.serverUrl = url.replace(/\/+$/, '');
+  state.language = lang;
+  currentLang = lang;
 
   await chrome.storage.local.set({ kudavas_settings: state });
-  showStatus('Đã lưu!');
+  showStatus(t('status_saved'));
 
   try {
     chrome.runtime.sendMessage({ action: 'settings-updated', settings: state });
