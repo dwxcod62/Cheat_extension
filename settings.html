@@ -122,18 +122,24 @@
 
     <div id="status" class="status"></div>
 
-    <!-- OpenAI Key -->
+    <!-- Server Connection + Credentials -->
     <div class="card">
-      <h2 id="section-openai">OpenAI</h2>
-      <div class="field">
-        <label for="api-key" id="api-key-label">API Key (sk-...)</label>
-        <input type="password" id="api-key" placeholder="sk-proj-..." autocomplete="off" />
-        <div class="hint" id="api-key-hint">Lưu local qua <code>chrome.storage.local</code>.</div>
-      </div>
+      <h2 id="section-server">Server Connection</h2>
       <div class="field">
         <label for="server-url" id="server-url-label">Server URL</label>
         <input type="text" id="server-url" placeholder="http://127.0.0.1:8765" />
-        <div class="hint" id="server-url-hint">Whisper backend.</div>
+        <div class="hint" id="server-url-hint">Whisper backend server URL.</div>
+      </div>
+      <div class="field">
+        <label for="license-key" id="license-key-label">License Key</label>
+        <input type="text" id="license-key" placeholder="ABCD1234" maxlength="8"
+               style="text-transform:uppercase; font-family:monospace; letter-spacing:1px;" />
+        <div class="hint" id="license-key-hint">Nhận khi mua license. Mỗi key chỉ dùng được trên 1 máy.</div>
+      </div>
+      <div class="field">
+        <label for="openai-key" id="openai-key-label">OpenAI API Key</label>
+        <input type="password" id="openai-key" placeholder="sk-..." />
+        <div class="hint" id="openai-key-hint">API key riêng của bạn. Mỗi user cần nhập key riêng khi bấm Check.</div>
       </div>
     </div>
 
@@ -182,6 +188,18 @@
           <div class="desc" id="notify-done-desc">Bật/tắt popup hệ thống sau khi Cast Spell fill xong câu trả lời.</div>
         </div>
         <div class="switch on" id="notify-done"></div>
+      </div>
+    </div>
+
+    <!-- Debug -->
+    <div class="card">
+      <h2 id="section-debug">Debug</h2>
+      <div class="switch-row">
+        <div class="label-block">
+          <div class="lbl" id="dry-run-label">Xem prompts (không gọi AI)</div>
+          <div class="desc" id="dry-run-desc">Khi bật: Cast Spell sẽ gọi /dryrun ở server, in prompts vào Console (F12) — không gọi OpenAI.</div>
+        </div>
+        <div class="switch" id="dry-run"></div>
       </div>
     </div>
 

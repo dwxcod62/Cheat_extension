@@ -6,15 +6,15 @@
   <title>KudaVas</title>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
-    
+
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    
+
     body {
       font-family: 'Inter', sans-serif;
       background: #111;
       color: #ccc;
-      width: 280px;
-      padding: 16px;
+      width: 320px;
+      padding: 14px;
       text-align: center;
     }
 
@@ -37,16 +37,8 @@
       cursor: pointer;
       transition: all 0.2s;
     }
-
-    #run-ai-btn:hover {
-      background: #2a2a2a;
-      border-color: #444;
-    }
-
-    #run-ai-btn:disabled {
-      opacity: 0.5;
-      cursor: wait;
-    }
+    #run-ai-btn:hover { background: #2a2a2a; border-color: #444; }
+    #run-ai-btn:disabled { opacity: 0.5; cursor: wait; }
 
     .footer {
       margin-top: 12px;
@@ -54,15 +46,23 @@
       color: #555;
     }
 
-    /* Keep IDs and structure for popup.js */
     #status-detail { font-size: 10px; color: #666; margin-bottom: 8px; min-height: 12px; }
     .loading-spinner { display: none; }
     .btn-icon { display: none; }
 
-    .key-row {
-      margin-bottom: 10px;
+    .field {
+      margin-bottom: 8px;
+      text-align: left;
     }
-    #openai-key {
+    .field-label {
+      font-size: 10px;
+      color: #888;
+      margin-bottom: 4px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .field-input {
       width: 100%;
       padding: 6px 8px;
       border: 1px solid #333;
@@ -71,16 +71,58 @@
       color: #fff;
       font-size: 11px;
       font-family: 'Courier New', monospace;
+      letter-spacing: 0.3px;
     }
-    #openai-key:focus {
-      outline: none;
-      border-color: #10b981;
+    .field-input:focus { outline: none; border-color: #10b981; }
+
+    .row-server-license { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+
+    .conn-pill {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 10px;
+      font-size: 9px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
     }
-    .key-label {
+    .conn-pill.checking { background: #444; color: #aaa; }
+    .conn-pill.ok { background: #064e3b; color: #10b981; }
+    .conn-pill.fail { background: #7f1d1d; color: #ef4444; }
+
+    /* Server picker dropdown */
+    details { text-align: left; margin-top: 6px; }
+    details summary {
       font-size: 10px;
-      color: #666;
-      margin-bottom: 4px;
-      text-align: left;
+      color: #06b6d4;
+      cursor: pointer;
+      user-select: none;
+      padding: 2px 0;
+    }
+    details[open] summary { color: #22d3ee; }
+    .preset-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 4px;
+      margin-top: 6px;
+    }
+    .preset-btn {
+      padding: 4px 6px;
+      font-size: 10px;
+      background: #1a1a1a;
+      border: 1px solid #333;
+      border-radius: 4px;
+      color: #aaa;
+      cursor: pointer;
+      font-family: inherit;
+    }
+    .preset-btn:hover { background: #222; border-color: #06b6d4; color: #06b6d4; }
+
+    .help-text {
+      font-size: 9px;
+      color: #555;
+      margin-top: 2px;
+      font-style: italic;
     }
   </style>
 </head>
@@ -88,13 +130,61 @@
   <div id="status-text">Ready</div>
   <div id="status-detail"></div>
 
-  <div class="key-row">
-    <div class="key-label">OpenAI Key (sk-...)</div>
-    <input id="openai-key" type="password" placeholder="sk-..." autocomplete="off" />
+    <!-- Server URL + License Key + OpenAI Key -->
+  <div class="row-server-license">
+    <div class="field">
+      <div class="field-label">
+        <span>Server URL</span>
+        <span id="conn-status" class="conn-pill checking">checking…</span>
+      </div>
+      <input id="server-url" type="text" placeholder="http://127.0.0.1:8765"
+             class="field-input" style="font-size:10px" />
+    </div>
+    <div class="field">
+      <div class="field-label">
+        <span>License Key</span>
+      </div>
+      <input id="license-key" type="text" placeholder="ABCD1234"
+             maxlength="8" class="field-input"
+             style="text-transform: uppercase;" />
+    </div>
   </div>
 
+  <div class="field" style="margin-bottom: 6px; margin-top: 4px;">
+    <div class="field-label">
+      <span>OpenAI API Key</span>
+      <span id="auth-status" class="conn-pill" style="display:none"></span>
+    </div>
+    <input id="openai-key" type="password" placeholder="sk-..." class="field-input" style="font-size:10px" />
+    <div class="help-text" id="auth-hint" style="font-size:9px; color:#555; margin-top:2px; font-style:italic; display:none"></div>
+  </div>
+
+  <!-- Server picker presets -->
+  <details>
+    <summary>Chọn nhanh server preset</summary>
+    <div class="preset-row">
+      <button class="preset-btn" data-url="http://127.0.0.1:8765">Local (8765)</button>
+      <button class="preset-btn" data-url="http://localhost:8765">localhost</button>
+      <button class="preset-btn" data-url="">Custom (URL↑)</button>
+    </div>
+    <div class="help-text">
+      Nhập License Key + OpenAI Key → bấm <b>Check</b> để tạo session.
+    </div>
+  </details>
+
+  <div style="height: 4px"></div>
+
+  <!-- Check / Login button -->
+  <div class="row-auth-btn" style="margin-bottom: 4px;">
+    <button id="auth-btn" style="width:100%; padding:7px 10px; border:1px solid #333; border-radius:5px; background:#1a1a1a; color:#ccc; font-size:12px; font-weight:600; cursor:pointer;">
+      Check
+    </button>
+  </div>
+
+  <div style="height: 4px"></div>
+
   <button id="run-ai-btn">
-    <span id="btn-text">Run</span>
+    <span id="btn-text">Ask AI to Solve</span>
     <div class="loading-spinner"></div>
   </button>
 

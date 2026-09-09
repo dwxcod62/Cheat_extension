@@ -135,20 +135,31 @@
     if (!qEl) return null;
     const question = cleanText(safeText(qEl));
     if (!question) return null;
-    const options = [];
+
+    const terms = [];
+    const definitionSet = new Set();
     el.querySelectorAll('.answers .answer').forEach(ans => {
       const termLabel = ans.querySelector('label[for]');
       const selectEl = ans.querySelector('select');
       if (!termLabel || !selectEl) return;
       const term = cleanText(safeText(termLabel));
-      const choices = [];
+      if (term) terms.push(term);
+      // Thu thập definitions (bỏ placeholder), deduplicate
       selectEl.querySelectorAll('option').forEach(opt => {
         const v = opt.textContent.trim();
-        if (v && v !== '[ Choose ]') choices.push(v);
+        if (v && v !== '[ Choose ]' && v !== '[ Select ]') definitionSet.add(v);
       });
-      if (term) options.push(`${term}: [${choices.join(' | ')}]`);
     });
-    return { question, type: 'matching', options };
+    if (!terms.length) return null;
+
+    return {
+      question,
+      type: 'matching',
+      // Terms đứng riêng (label ở mỗi row dropdown)
+      terms,
+      // Definitions là các option trong select (unique, không có placeholder)
+      options: Array.from(definitionSet),
+    };
   }
 
   function parseMultipleDropdowns(el) {
@@ -437,20 +448,17 @@
     showToast('⏳ Đang cào + AI solve + fill…', 'info');
 
     try {
-      const tabId = await getTabId();
-      const stored = await new Promise((res) => chrome.storage.local.get('kudavas_settings', res));
-      const openaiKey = stored?.kudavas_settings?.openaiKey || '';
-
-      if (!openaiKey) {
-        showToast('⚠ Chưa có OpenAI key. Mở Settings.', 'err');
-        shortcutTriggering = false;
+      // Guard: nếu extension vừa reload, runtime context có thể invalid
+      if (!chrome.runtime?.id) {
+        showToast('⚠️ Extension vừa reload — tải lại trang (F5) rồi thử lại.', 'warn');
         return;
       }
+      const tabId = await getTabId();
+      // OpenAI key do server quản lý; chỉ cần gửi tabId.
 
       const resp = await chrome.runtime.sendMessage({
         action: 'solve-and-fill',
         tabId,
-        openaiKey,
       });
 
       if (resp?.error) {
@@ -460,7 +468,12 @@
       }
     } catch (err) {
       console.error('[KudaVas] shortcut error:', err);
-      showToast('❌ ' + (err.message || err), 'err');
+      const msg = err?.message || String(err);
+      if (/Extension context invalidated/i.test(msg) || /Receiving end does not exist/i.test(msg)) {
+        showToast('⚠️ Extension vừa reload — bấm F5 trên trang rồi thử lại.', 'warn');
+      } else {
+        showToast('❌ ' + msg, 'err');
+      }
     } finally {
       setTimeout(() => { shortcutTriggering = false; }, 1000);
     }
@@ -574,6 +587,16 @@
 
         console.log(`%c[KudaVas] Q${i + 1} — Filling [${type}]`, 'color:#4ade80', { question: targetQ, answer });
 
+        // If AI trả null/undefined answer → skip cả câu với warning rõ ràng
+        if (answer === null || answer === undefined || answer === '') {
+          console.warn(
+            `%c[KudaVas] ⚠ Q${i + 1} (${type}) — no answer from AI, skipping. ` +
+            `error=${ansObj.error || 'n/a'}`,
+            'color:#fbbf24;font-weight:bold'
+          );
+          return;
+        }
+
         try {
           if (type === 'multiple_choice' || type === 'true_false') {
             const cleanAns = cleanText(String(answer));
@@ -621,27 +644,51 @@
                   if (contextText) break;
                 }
               }
-              return { sel, contextText };
+              return { sel, contextText, used: false };
             });
 
-            // Pair terms → definitions and fill each select
+            // Normalize text để so khớp khi AI trả về hơi khác (apostrophe, punctuation, case).
+            //   "earth's" vs "earths" → normalize cả 2 về cùng dạng
+            //   "Earthquake" vs "earthquake " → lowercase + trim
+            const norm = (s) => cleanText(String(s))
+              .toLowerCase()
+              .replace(/[''`´]/g, "'")   // smart quotes → straight
+              .replace(/[^a-z0-9\s]/g, ' ') // bỏ punctuation
+              .replace(/\s+/g, ' ')
+              .trim();
+
+            // Pair terms → definitions and fill each select.
+            // Each select is consumed at most once per question so two
+            // matching_questions back-to-back don't bleed indices.
             const entries = Object.entries(obj);
             for (const [term, def] of entries) {
               const cleanT = cleanText(String(term));
               const cleanD = cleanText(String(def));
               if (!cleanT || !cleanD) continue;
 
-              // Find the select whose surrounding text mentions the term
-              const targetSel = selectPool.find(p => p.contextText.includes(cleanT))
-                || selectPool[pickedCount % Math.max(selectPool.length, 1)];
-              if (!targetSel) continue;
+              // Prefer an unused select whose surrounding text mentions the term.
+              let targetIdx = selectPool.findIndex(p => !p.used && p.contextText.includes(cleanT));
+              if (targetIdx < 0) {
+                // Fallback: pick the first unused select in order.
+                targetIdx = selectPool.findIndex(p => !p.used);
+              }
+              if (targetIdx < 0) continue; // no free selects left in this question
 
+              const targetSel = selectPool[targetIdx];
               const sel = targetSel.sel;
+              const normD = norm(def);
               let matched = false;
               for (const opt of sel.options) {
                 const optT = cleanText(opt.text);
                 if (!optT || optT === '[ Select ]' || optT === '[ Choose ]') continue;
+
+                // Layer 1: exact / contains match (đã có)
                 let ok = optT === cleanD || optT.includes(cleanD) || cleanD.includes(optT);
+                // Layer 2: normalized match (handle apostrophe/punctuation/case)
+                if (!ok && normD) {
+                  const normOpt = norm(optT);
+                  ok = normOpt === normD || normOpt.includes(normD) || normD.includes(normOpt);
+                }
                 if (!ok) {
                   // JSON-as-string fallback
                   const optText = opt.text || '';
@@ -655,6 +702,15 @@
                         sel.dispatchEvent(new Event('change', { bubbles: true }));
                         matched = true;
                         break;
+                      }
+                      if (normD) {
+                        const normLbl = norm(label);
+                        if (normLbl === normD || normLbl.includes(normD) || normD.includes(normLbl)) {
+                          sel.value = m[1];
+                          sel.dispatchEvent(new Event('change', { bubbles: true }));
+                          matched = true;
+                          break;
+                        }
                       }
                     }
                     if (matched) break;
@@ -672,6 +728,7 @@
               }
 
               if (matched) {
+                targetSel.used = true;
                 pickedCount++;
                 console.log(`%c[KudaVas] matching ✓ "${cleanT}" → "${cleanD}" (sel.value="${sel.value}")`, 'color:#10b981');
               } else {
@@ -697,9 +754,22 @@
 
             const selects = targetEl.querySelectorAll('.question_text select');
             console.log(`%c[KudaVas] multi-dropdown fill — answer=${JSON.stringify(answer)} → arr=${JSON.stringify(arr)} selects=${selects.length}`, 'color:#06b6d4');
+
+            // If AI trả thiếu items, log cảnh báo để debug — không silent skip
+            if (arr.length !== selects.length) {
+              console.warn(
+                `%c[KudaVas] ⚠ multi-dropdown length mismatch: ${arr.length} answers vs ${selects.length} blanks. ` +
+                `Last ${Math.max(0, selects.length - arr.length)} blank(s) will be skipped.`,
+                'color:#fbbf24;font-weight:bold'
+              );
+            }
+
             let picked = false;
             selects.forEach((sel, idx) => {
-              if (!arr[idx]) { console.log(`  [sel ${idx}] no answer for this blank`); return; }
+              if (!arr[idx]) {
+                console.log(`  [sel ${idx}] no answer for this blank (arr[${idx}]=undefined)`);
+                return;
+              }
               const val = cleanText(String(arr[idx]));
               if (!val) return;
               console.log(`  [sel ${idx}] target value="${val}" current sel.value="${sel.value}" options=${sel.options.length}`);

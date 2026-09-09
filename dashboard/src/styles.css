@@ -87,8 +87,9 @@ button.icon { padding: 6px 8px; }
   display: grid;
   grid-template-columns: auto 1fr auto;
   grid-template-areas:
-    "label input actions"
-    "hint hint hint";
+    "label  input  actions"
+    "label2 input2 actions2"
+    "hint   hint   hint";
   column-gap: 10px;
   row-gap: 6px;
   align-items: center;
@@ -104,6 +105,11 @@ button.icon { padding: 6px 8px; }
   color: var(--text-dim);
   white-space: nowrap;
   letter-spacing: 0.3px;
+}
+/* The second .key-label (OpenAI Key) needs its own grid area */
+.key-bar > label + .key-input-wrap + .key-actions + label {
+  grid-area: label2;
+  font-size: 11px;
 }
 .key-input-wrap {
   grid-area: input;
@@ -126,6 +132,33 @@ button.icon { padding: 6px 8px; }
 }
 .key-input:focus { border-color: var(--accent); }
 .key-input::placeholder { color: var(--text-mute); }
+.key-input.is-valid { border-color: #22c55e; background: rgba(34, 197, 94, 0.05); }
+.key-input.is-invalid { border-color: #ef4444; background: rgba(239, 68, 68, 0.05); }
+
+/* License key verification status indicators */
+.key-status-spinner,
+.key-status-ok,
+.key-status-err,
+.key-status-warn {
+  position: absolute;
+  right: 56px;
+  font-size: 14px;
+  pointer-events: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+}
+.key-status-spinner { color: #fbbf24; animation: spin 1s linear infinite; }
+.key-status-ok { color: #22c55e; font-weight: bold; }
+.key-status-err { color: #ef4444; font-weight: bold; }
+.key-status-warn { color: #fbbf24; font-weight: bold; }
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
 
 .key-toggle,
 .key-clear {
@@ -157,12 +190,34 @@ button.icon { padding: 6px 8px; }
 }
 .key-change-btn:hover { background: #232830; border-color: #3a4049; }
 
+.key-check-btn {
+  background: var(--accent);
+  border: 1px solid var(--accent);
+  color: #fff;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s;
+}
+.key-check-btn:hover:not(:disabled) { background: #dc2626; border-color: #dc2626; }
+.key-check-btn:disabled { opacity: 0.6; cursor: wait; }
+.key-check-btn.logged-in {
+  background: var(--ok);
+  border-color: var(--ok);
+  color: #fff;
+}
+.key-check-btn.logged-in:hover { background: #16a34a; border-color: #16a34a; }
+
 .key-hint {
   grid-area: hint;
   font-size: 11px;
 }
 .key-ok { color: var(--ok); }
-.key-warn { color: var(--text-mute); }
+.key-warn { color: var(--warn); }
+.key-err { color: var(--accent); }
 
 /* â”€â”€â”€ Status bar â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .status-bar {

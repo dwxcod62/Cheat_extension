@@ -1,14 +1,14 @@
-// settings.js — manage OpenAI key + keyboard shortcut + UI language (opened as standalone page)
+// settings.js — manage server URL + keyboard shortcut + UI language (opened as standalone page)
 
 const $ = (id) => document.getElementById(id);
 
 const DEFAULTS = {
-  openaiKey: '',
   serverUrl: 'http://127.0.0.1:8765',
   shortcut: 'Ctrl+Alt+I',
   shortcutEnabled: true,
   language: 'vi',
   notifyOnDone: true,
+  debugDryRun: false,
 };
 
 // ── i18n strings (UI only — prompts/AI untouched) ──────────
@@ -16,11 +16,13 @@ const I18N = {
   vi: {
     title: '⚙ Settings',
     subtitle: 'Cấu hình KudaVas extension',
-    section_openai: 'OpenAI',
-    api_key: 'API Key (sk-...)',
-    api_key_hint: 'Lưu local qua chrome.storage.local.',
+    section_openai: 'Server & Credentials',
+    api_key: 'OpenAI API Key',
+    api_key_hint: 'API key riêng của bạn. Nhập khi bấm Check trong popup.',
+    license_key: 'License Key',
+    license_key_hint: 'Nhận khi mua license. Mỗi key chỉ dùng trên 1 máy.',
     server_url: 'Server URL',
-    server_url_hint: 'Whisper backend.',
+    server_url_hint: 'Whisper backend server URL.',
     section_shortcut: 'Keyboard Shortcut',
     shortcut_label: 'Phím tắt để chạy AI (mặc định Ctrl+Alt+I)',
     shortcut_hint: 'Bấm vào ô để ghi phím mới (Esc để cancel).',
@@ -41,15 +43,20 @@ const I18N = {
     lang_en: 'English',
     lang_vi: 'Tiếng Việt',
     lang_th: 'ไทย',
+    section_debug: 'Debug',
+    dry_run_label: 'Xem prompts (không gọi AI)',
+    dry_run_desc: 'Khi bật: Cast Spell sẽ gọi /dryrun ở server, in prompts vào Console (F12) — không gọi OpenAI.',
   },
   en: {
     title: '⚙ Settings',
     subtitle: 'Configure KudaVas extension',
-    section_openai: 'OpenAI',
-    api_key: 'API Key (sk-...)',
-    api_key_hint: 'Stored locally via chrome.storage.local.',
+    section_openai: 'Server & Credentials',
+    api_key: 'OpenAI API Key',
+    api_key_hint: 'Your personal API key. Enter when clicking Check in popup.',
+    license_key: 'License Key',
+    license_key_hint: 'Received on purchase. Each key works on 1 machine only.',
     server_url: 'Server URL',
-    server_url_hint: 'Whisper backend.',
+    server_url_hint: 'Whisper backend server URL.',
     section_shortcut: 'Keyboard Shortcut',
     shortcut_label: 'Hotkey to trigger AI (default Ctrl+Alt+I)',
     shortcut_hint: 'Click the box to record a new key (Esc to cancel).',
@@ -61,6 +68,9 @@ const I18N = {
     section_notifications: 'Notifications',
     notify_done_label: 'Show notification when done',
     notify_done_desc: 'Toggle the OS-level popup after Cast Spell finishes filling answers.',
+    section_debug: 'Debug',
+    dry_run_label: 'View prompts (no AI call)',
+    dry_run_desc: 'When on: Cast Spell calls /dryrun on server, prints prompts to Console (F12) — does NOT call OpenAI.',
     save: 'Save',
     cancel: 'Cancel',
     status_saved: 'Saved!',
@@ -74,11 +84,13 @@ const I18N = {
   th: {
     title: '⚙ ตั้งค่า',
     subtitle: 'ตั้งค่า KudaVas extension',
-    section_openai: 'OpenAI',
-    api_key: 'API Key (sk-...)',
-    api_key_hint: 'จัดเก็บใน chrome.storage.local',
+    section_openai: 'Server & Credentials',
+    api_key: 'OpenAI API Key',
+    api_key_hint: 'API key ส่วนตัว ใส่ตอนกด Check ใน popup',
+    license_key: 'License Key',
+    license_key_hint: 'ได้รับตอนซื้อ license แต่ละ key ใช้ได้ 1 เครื่อง',
     server_url: 'Server URL',
-    server_url_hint: 'Whisper backend',
+    server_url_hint: 'Whisper backend server URL',
     section_shortcut: 'คีย์ลัด',
     shortcut_label: 'คีย์ลัดเรียก AI (ค่าเริ่มต้น Ctrl+Alt+I)',
     shortcut_hint: 'คลิกช่องเพื่อบันทึกคีย์ใหม่ (Esc เพื่อยกเลิก)',
@@ -90,6 +102,9 @@ const I18N = {
     section_notifications: 'การแจ้งเตือน',
     notify_done_label: 'แสดงแจ้งเตือนเมื่อเสร็จ',
     notify_done_desc: 'เปิด/ปิด popup ของระบบหลัง Cast Spell เติมคำตอบเสร็จ',
+    section_debug: 'Debug',
+    dry_run_label: 'ดู prompts (ไม่เรียก AI)',
+    dry_run_desc: 'เปิดแล้ว: Cast Spell จะเรียก /dryrun ที่ server พิมพ์ prompts ลง Console (F12) — ไม่เรียก OpenAI',
     save: 'บันทึก',
     cancel: 'ยกเลิก',
     status_saved: 'บันทึกแล้ว!',
@@ -125,23 +140,27 @@ async function load() {
   const stored = await chrome.storage.local.get('kudavas_settings');
   state = { ...DEFAULTS, ...(stored.kudavas_settings || {}) };
   currentLang = state.language || 'vi';
-  $('api-key').value = state.openaiKey;
-  $('server-url').value = state.serverUrl;
+  $('server-url').value = state.serverUrl || 'http://127.0.0.1:8765';
+  $('license-key').value = (state.licenseKey || '').toUpperCase();
+  $('openai-key').value = state.openaiKey || '';
   $('language-select').value = currentLang;
   applyTranslations();
   renderShortcut();
   renderSwitch();
   renderNotify();
+  renderDryRun();
 }
 
 function applyTranslations() {
   $('title-text').innerHTML = t('title');
   $('subtitle-text').textContent = t('subtitle');
-  $('section-openai').textContent = t('section_openai');
-  $('api-key-label').textContent = t('api_key');
-  $('api-key-hint').textContent = t('api_key_hint');
+  $('section-server').textContent = t('section_openai');
   $('server-url-label').textContent = t('server_url');
   $('server-url-hint').textContent = t('server_url_hint');
+  $('license-key-label').textContent = t('license_key');
+  $('license-key-hint').textContent = t('license_key_hint');
+  $('openai-key-label').textContent = t('api_key');
+  $('openai-key-hint').textContent = t('api_key_hint');
   $('section-shortcut').textContent = t('section_shortcut');
   $('shortcut-label-text').innerHTML = t('shortcut_label');
   $('shortcut-hint').textContent = t('shortcut_hint');
@@ -153,6 +172,9 @@ function applyTranslations() {
   $('section-notifications').textContent = t('section_notifications');
   $('notify-done-label').textContent = t('notify_done_label');
   $('notify-done-desc').textContent = t('notify_done_desc');
+  $('section-debug').textContent = t('section_debug');
+  $('dry-run-label').textContent = t('dry_run_label');
+  $('dry-run-desc').textContent = t('dry_run_desc');
   $('save-btn').textContent = t('save');
   $('cancel-btn').textContent = t('cancel');
   // language options
@@ -173,6 +195,11 @@ function renderSwitch() {
 function renderNotify() {
   const sw = $('notify-done');
   sw.classList.toggle('on', state.notifyOnDone);
+}
+
+function renderDryRun() {
+  const sw = $('dry-run');
+  sw.classList.toggle('on', state.debugDryRun);
 }
 
 function formatShortcut(s) {
@@ -261,6 +288,11 @@ $('notify-done').addEventListener('click', () => {
   renderNotify();
 });
 
+$('dry-run').addEventListener('click', () => {
+  state.debugDryRun = !state.debugDryRun;
+  renderDryRun();
+});
+
 // ── Reset shortcut ─────────────────────────────────────────
 $('reset-shortcut-btn').addEventListener('click', () => {
   state.shortcut = DEFAULTS.shortcut;
@@ -278,7 +310,6 @@ $('language-select').addEventListener('change', (e) => {
 
 // ── Save ───────────────────────────────────────────────────
 $('save-btn').addEventListener('click', async () => {
-  const key = $('api-key').value.trim();
   const url = $('server-url').value.trim();
   const lang = $('language-select').value;
   if (!url) {
@@ -286,10 +317,11 @@ $('save-btn').addEventListener('click', async () => {
     return;
   }
 
-  state.openaiKey = key;
   state.serverUrl = url.replace(/\/+$/, '');
   state.language = lang;
-  state.notifyOnDone = state.notifyOnDone !== false;  // default true
+  state.licenseKey = ($('license-key').value || '').toUpperCase().trim();
+  state.openaiKey = ($('openai-key').value || '').trim();
+  state.notifyOnDone = state.notifyOnDone !== false;
   currentLang = lang;
 
   await chrome.storage.local.set({ kudavas_settings: state });

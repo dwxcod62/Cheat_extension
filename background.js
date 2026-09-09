@@ -4,10 +4,35 @@
 
 importScripts('scripts/config.js');
 
-const SERVER_URL = CONFIG.PROCESS_ENDPOINT;
-const SOLVE_URL  = (typeof CONFIG.SOLVE_ENDPOINT === 'string' && CONFIG.SOLVE_ENDPOINT)
-  ? CONFIG.SOLVE_ENDPOINT
-  : SERVER_URL.replace(/\/+$/, '') + '/solve';
+// Read server URL + license key dynamically from settings.
+// Service worker: chrome.storage.local.get is async; we resolve lazily.
+let _solveUrlCache = null;
+let _licenseKeyCache = null;
+
+async function getSolveSettings() {
+  const stored = await chrome.storage.local.get('kudavas_settings');
+  const cfg = stored?.kudavas_settings || {};
+  const serverUrl = (cfg.serverUrl || '').trim();
+  const licenseKey = (cfg.licenseKey || '').trim().toUpperCase();
+  return { serverUrl, licenseKey };
+}
+
+async function getSolveUrl() {
+  const { serverUrl, licenseKey } = await getSolveSettings();
+  // Always refresh license key from storage (don't cache — popup may have just updated it)
+  _licenseKeyCache = licenseKey;
+  if (serverUrl) {
+    _solveUrlCache = serverUrl.replace(/\/+$/, '') + '/solve';
+    return { url: _solveUrlCache, licenseKey };
+  }
+  // Fallback: hardcoded config
+  if (typeof CONFIG.SOLVE_ENDPOINT === 'string' && CONFIG.SOLVE_ENDPOINT) {
+    _solveUrlCache = CONFIG.SOLVE_ENDPOINT;
+  } else {
+    _solveUrlCache = CONFIG.API_BASE_URL.replace(/\/+$/, '') + '/solve';
+  }
+  return { url: _solveUrlCache, licenseKey };
+}
 
 /* ──────────────────────────────────────────────────────────────
    Cache of the latest scraped questions per tabId.
@@ -82,9 +107,16 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
   // 2b) Atomic: scrape + call backend + fill — 1 click trên popup là đủ.
   if (request.action === 'solve-and-fill') {
-    handleSolveAndFill(request.tabId, request.openaiKey)
+    handleSolveAndFill(request.tabId, request.session)
       .then(res => sendResponse(res))
       .catch(err => sendResponse({ error: err.message }));
+    return true;
+  }
+
+  // 2c) Settings changed — invalidate server URL cache so next request uses new URL.
+  if (request.action === 'settings-updated') {
+    _solveUrlCache = null;
+    sendResponse({ ok: true });
     return true;
   }
 
@@ -171,12 +203,12 @@ async function handleScrape(tabId) {
 
 /* ──────────────────────────────────────────────────────────────
    Atomic solve-and-fill — 1 click trên popup là đủ.
-   Flow: scrape → gọi /solve với OpenAI key → fill lên tab.
+   Flow: scrape → gọi /solve với token → fill lên tab.
 ────────────────────────────────────────────────────────────── */
-async function handleSolveAndFill(tabId, openaiKey) {
+async function handleSolveAndFill(tabId, session) {
   try {
     if (!tabId) return { error: 'Missing tabId' };
-    if (!openaiKey) return { error: 'Thiếu OpenAI key' };
+    if (!session?.token) return { error: 'Chưa đăng nhập — bấm Check trước' };
 
     console.log('[KudaVas] solve-and-fill started for tab', tabId);
 
@@ -214,33 +246,90 @@ async function handleSolveAndFill(tabId, openaiKey) {
       question: q.question,
       type: q.type,
       options: Array.isArray(q.options) ? q.options : [],
+      // Matching question: cần list terms riêng để server build prompt đúng.
+      terms: Array.isArray(q.terms) ? q.terms : undefined,
       url: q.url || '',
       entry_id: q.entryId || undefined,
       language: 'vi',
     }));
 
-    const solveResp = await fetch(SOLVE_URL, {
+    // 5b. Dry-run: dừng lại ở đây, gọi /dryrun ở server để build prompt thật
+    // (không gọi OpenAI). Log prompts vào Console.
+    const cfg = (await chrome.storage.local.get('kudavas_settings') || {}).kudavas_settings || {};
+    if (cfg.debugDryRun) {
+      const dryUrl = (session.serverUrl || '').replace(/\/+$/, '') + '/dryrun';
+      console.log('%c[KudaVas] 🔍 DRY-RUN — gọi /dryrun, không gọi OpenAI', 'color:#facc15;font-weight:bold');
+      const dryHeaders = { 'Content-Type': 'application/json' };
+      if (session.token) dryHeaders['x-token'] = session.token;
+      let promptResults = [];
+      try {
+        const r = await fetch(dryUrl, {
+          method: 'POST', headers: dryHeaders,
+          body: JSON.stringify({ questions: payload }),
+        }).catch(e => ({ ok: false, _err: e.message }));
+        if (r.ok) {
+          const data = await r.json();
+          promptResults = data.prompts || [];
+        } else {
+          console.warn(`[KudaVas] /dryrun lỗi: HTTP ${r.status || 0} ${r._err || ''}`);
+        }
+      } catch (e) {
+        console.warn('[KudaVas] /dryrun exception:', e);
+      }
+
+      // Log từng prompt ra Console
+      if (promptResults.length) {
+        promptResults.forEach(p => {
+          console.group(`%c[Q${p.index}] ${p.type}`, 'color:#facc15;font-weight:bold');
+          console.log('%c── SYSTEM ──', 'color:#60a5fa;font-weight:bold');
+          console.log(p.system_prompt);
+          console.log('%c── USER ──', 'color:#34d399;font-weight:bold');
+          console.log(p.user_message);
+          console.groupEnd();
+        });
+        console.log('%c→ Bỏ tick "Dừng trước OpenAI" trong Settings để fill thật.', 'color:#facc15');
+      }
+      const solvedList = payload.map((q) => ({
+        index: q.index, type: q.type, question: q.question, url: q.url || '',
+        answer: null, error: 'dry_run',
+      }));
+      await setCache(tabId, { url, title, questions, solvedAnswers: solvedList });
+      try { chrome.runtime.sendMessage({ action: 'solve-done', tabId, count: 0, filled: 0 }); } catch (_) {}
+      return { success: true, count: questions.length, filled: 0, dryRun: true };
+    }
+
+    // 6. POST /solve — use session token
+    const solveUrl = (session.serverUrl || '').replace(/\/+$/, '') + '/solve';
+    const headers = {
+      'Content-Type': 'application/json',
+    };
+    if (session.token) headers['x-token'] = session.token;
+    const solveResp = await fetch(solveUrl, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-OpenAI-Key': openaiKey.trim(),
-      },
+      headers,
       body: JSON.stringify({ questions: payload }),
     }).catch(err => ({ ok: false, status: 0, _err: err.message }));
     if (!solveResp.ok) {
       const txt = await solveResp.text().catch(() => '');
+      // Handle token invalid (401) → suggest re-login
+      if (solveResp.status === 401) {
+        return { error: 'Token hết hạn — bấm Check để đăng nhập lại' };
+      }
       return { error: `Server lỗi HTTP ${solveResp.status}: ${txt.slice(0, 200)}` };
     }
     const solveData = await solveResp.json().catch(() => ({}));
     const answers = Array.isArray(solveData) ? solveData : (solveData.answers || []);
 
     // 6. Map sang format fill.
+    // Nếu answer là null (AI không trả lời được) → giữ null để fill skip cả câu,
+    // không ép thành '' (sẽ làm fill logic im lặng skip từng select).
     const solvedList = answers.map(r => ({
       index: r.index,
       type: questions.find(q => q.index === r.index)?.type,
       question: questions.find(q => q.index === r.index)?.question || '',
       url: questions.find(q => q.index === r.index)?.url || '',
-      answer: r.answer ?? '',
+      answer: r.answer === undefined ? null : r.answer,
+      error: r.error || null,
     }));
 
     // 7. Fill lên tab.
@@ -281,6 +370,17 @@ async function handleSolveAndFill(tabId, openaiKey) {
     } catch (e) { /* notifications may be blocked */ }
 
     console.log(`[KudaVas] solve-and-fill complete — ${filledCount} filled`);
+    // Log rõ ràng những câu fail (AI không trả lời được) để user debug.
+    const failed = solvedList.filter(s => s.answer === null || s.answer === undefined);
+    if (failed.length > 0) {
+      console.warn(
+        `[KudaVas] ⚠ ${failed.length}/${questions.length} câu không có answer từ AI:`
+      );
+      failed.slice(0, 5).forEach(f => {
+        console.warn(`  - Q[${f.index}] type=${f.type} error=${f.error || 'n/a'} question="${(f.question || '').slice(0, 60)}..."`);
+      });
+      if (failed.length > 5) console.warn(`  ... và ${failed.length - 5} câu nữa`);
+    }
     return { success: true, count: questions.length, filled: filledCount };
   } catch (err) {
     console.error('[KudaVas] solve-and-fill error:', err);
